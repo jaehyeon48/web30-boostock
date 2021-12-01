@@ -4,6 +4,7 @@ import { RecoilRoot, useRecoilState } from 'recoil';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import toast, { Toaster, useToasterStore } from 'react-hot-toast';
 import User from '@recoil/user';
+import { getUserInfo } from '@lib/api';
 import TopBar from '@common/topbar/TopBar';
 import Theme from './Theme';
 import './app.scss';
@@ -30,25 +31,19 @@ const App: React.FC = () => {
 	const pages: Ipage[] = [];
 
 	useEffect(() => {
-		fetch(`${process.env.SERVER_URL}/api/user`, {
-			method: 'GET',
-			credentials: 'include',
-			headers: {
-				'Content-Type': 'application/json; charset=utf-8',
-			},
-		}).then((res: Response) => {
-			if (res.ok) {
-				res.json().then((data) => {
-					setUserState({
-						...userState,
-						username: data.user.username,
-						email: data.user.email,
-						isLoggedIn: true,
-					});
-					eventEmitter.emit('REGISTER_ALARM', getCookie('alarm_token'));
-				});
-			}
-		});
+		(async () => {
+			const userInfo = await getUserInfo();
+			if (!userInfo) return;
+
+			const { username, email } = userInfo;
+			setUserState({
+				...userState,
+				username,
+				email,
+				isLoggedIn: true,
+			});
+			eventEmitter.emit('REGISTER_ALARM', getCookie('alarm_token'));
+		})();
 	}, []);
 
 	useEffect(() => {
